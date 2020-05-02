@@ -1,0 +1,103 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 17 16:02:55 2019
+
+@author: chris.stevenson
+"""
+# Package installs
+#!unzip data-release.zip
+import numpy as np
+import numpy.random as nr
+import matplotlib.pyplot as plt
+import keras
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Flatten
+from keras.layers import Conv2D, MaxPooling2D
+from keras.utils import to_categorical
+from keras.preprocessing import image
+import keras.utils.np_utils as ku
+import keras.models as models
+import keras.layers as layers
+from keras import regularizers
+from keras.optimizers import rmsprop, Adam
+import pandas as pd
+import tensorflow as tf
+tf.compat.v1.random.set_random_seed
+from sklearn.model_selection import train_test_split
+from keras.utils import to_categorical
+from tqdm import tqdm
+
+train = pd.read_csv('train.csv') # reading the csv file
+train.head() # printing first five rows of the file
+
+# We have grayscale images, so while loading the images we will keep grayscale=True, if you have RGB images, you should set grayscale as False
+train_image = []
+for i in tqdm(range(train.shape[0])):
+    img = image.load_img('train/'+train['id'][i].astype('str')+'_c.png', target_size=(128,176,1), grayscale=True)
+    img = image.img_to_array(img)
+    img = img/255
+    train_image.append(img)
+X = np.array(train_image)
+
+classes = ['Heater', 'Fridge', 'Hairdryer', 'Microwave', 'Air Conditioner', 'Vacuum', 'Incandescent Light Bulb', 'Laptop', 'Compact Fluorescent Lamp', 'Fan', 'Washing Machine']
+for d in os.listdir(PATH):
+    if os.path.isdir(os.path.join(PATH, d)) and not d.startswith('.'):
+        classes.append(d) 
+print ("There are ", len(classes), "classes:\n", classes) 
+
+y=train['appliance'].values
+y = to_categorical(y)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=0.2)
+
+model = Sequential()
+model.add(Conv2D(32, kernel_size=(3, 3),activation='relu',input_shape=(128,176,1)))
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(11, activation='softmax'))
+
+model.compile(loss='categorical_crossentropy',optimizer='Adam',metrics=['accuracy'])
+
+model.fit(X_train, y_train, epochs=200, validation_data=(X_test, y_test))
+
+
+
+# Test Data Analysis Begins below
+
+test = pd.read_csv('test.csv')
+
+test_image = []
+for i in tqdm(range(test.shape[0])):
+    img = image.load_img('test/'+test['id'][i].astype('str')+'_c.png', target_size=(128,176,1), grayscale=True)
+    img = image.img_to_array(img)
+    img = img/255
+    test_image.append(img)
+test = np.array(test_image)
+
+# making predictions
+prediction = model.predict_classes(test)
+
+# creating submission file
+sample = pd.read_csv('submission_format1.csv')
+sample['appliance'] = prediction
+sample.to_csv('submission_format1.csv', header=True, index=False)
+
+from matplotlib import pyplot as plt
+plt.imshow(data, interpolation='nearest')
+plt.show()
+
+from scipy.misc import toimage
+toimage(data).show()
+
+from PIL import Image
+import numpy
+im = Image.open("sample2.png")
+np_im = numpy.array(im)
+print(np_im.shape)
+np_im = np_im - 18
+new_im = Image.fromarray(np_im)
+new_im.save("numpy_altered_sample2.png")
